@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://drit7e3c81lhq"]
+
+[ext_resource type="Shader" path="res://ShaderScripts/ray_march.gdshader" id="1_dwlwf"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ng4fi"]
+render_priority = 0
+shader = ExtResource("1_dwlwf")
+
+[sub_resource type="QuadMesh" id="QuadMesh_niq2g"]
+material = SubResource("ShaderMaterial_ng4fi")
+size = Vector2(2, 2)
+
+[node name="RayMarch" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("QuadMesh_niq2g")
