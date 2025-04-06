@@ -5,18 +5,19 @@ uniform vec3 box_position = vec3(0.0, -0.2, -5);
 const float sphere_radius = 0.2;
 const vec2 torus_radi = vec2(0.2, 0.08);
 const float eps = 0.001;
-const vec3 color1 = vec3(2.0, 4.0, 3.0);
-const vec3 color2 = vec3(3.0, 2.0, 4.0);
+const vec3 color1 = vec3(0.0, 0.0, 5.0);
+const vec3 color2 = vec3(5.0, 0.0, 0.0);
 const vec3 light_position = vec3(-10, 10, -3);
 const float ambient_strength = 0.1;
 const vec3 light_color = vec3(1.0, 1.0, 1.0);
 const float shininess = 32.0;
 uniform float smoothness: hint_range(0.0, 1.0) = 0.5;
-uniform float sphere_ypos: hint_range(-1.0, 1.0) = 0.0;
+//uniform float sphere_ypos: hint_range(-1.0, 1.0) = 0.0;
 
 //Primitive Combination Functions
-float opSmoothUnion(float d1, float d2, float k){
+float opSmoothUnion(float d1, float d2, float k, out float blend_factor){
 	float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+	blend_factor = h;
 	return mix(d2, d1, h) - k*h*(1.0 - h);
 }
 
@@ -43,7 +44,7 @@ vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction){
 }
 
 vec3 sphere(vec3 position, vec3 ray_origin, vec3 ray_direction, float s_radius, vec2 t_radius, vec3 col){
-	position += vec3(0.0, sphere_ypos, 0.0);
+	position += vec3(0.0, sin(TIME), 0.0);
 	float depth = 0.0;
 	vec3 point = vec3(0.0, 0.0, 0.0);
 	float dist = 0.0;
@@ -129,6 +130,9 @@ void fragment() {
 	vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
 	vec3 up = normalize(cross(forward, right));
 	ray_direction = normalize(vec3(forward + uv.x * right + uv.y * up));
+	float oscY = sin(TIME);
+	float blend_factor = 0.0;
+	float dummy = 0.0;
 
 	//ALBEDO = sphere(sphere_position, ray_origin, ray_direction, sphere_radius, torus_radi);
 	float depth = 0.0;
@@ -138,43 +142,49 @@ void fragment() {
 	float dist2 = 0.0;
 	for(int i = 0; i < 100; i++){
 		dist1 = boxSDF((ray_origin + depth * ray_direction) - box_position, sphere_radius, torus_radi);//(0.2, 0.08)
-		dist2 = sphereSDF((ray_origin + depth * ray_direction) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi);
-		dist = opSmoothUnion(dist1, dist2, 0.5);
+		dist2 = sphereSDF((ray_origin + depth * ray_direction) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi);
+		dist = opSmoothUnion(dist1, dist2, 0.5, blend_factor);
 		if(dist <= eps){
 			point = ray_origin + depth * ray_direction;
 			vec3 normal = normalize(vec3(
 				opSmoothUnion(
 					boxSDF(vec3(point.x + eps, point.y, point.z) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x + eps, point.y, point.z) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x + eps, point.y, point.z) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				) - 
 				opSmoothUnion(
 					boxSDF(vec3(point.x - eps, point.y, point.z) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x - eps, point.y, point.z) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x - eps, point.y, point.z) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				),
 				opSmoothUnion(
 					boxSDF(vec3(point.x, point.y + eps, point.z) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x, point.y + eps, point.z) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x, point.y + eps, point.z) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				) - 
 				opSmoothUnion(
 					boxSDF(vec3(point.x, point.y - eps, point.z) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x, point.y - eps, point.z) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x, point.y - eps, point.z) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				),
 				opSmoothUnion(
 					boxSDF(vec3(point.x, point.y, point.z + eps) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x, point.y, point.z + eps) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x, point.y, point.z + eps) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				) - 
 				opSmoothUnion(
 					boxSDF(vec3(point.x, point.y, point.z - eps) - box_position, sphere_radius, torus_radi),
-					sphereSDF(vec3(point.x, point.y, point.z - eps) - (sphere_position + vec3(0.0, sphere_ypos, 0.0)), sphere_radius, torus_radi),	
-					smoothness	
+					sphereSDF(vec3(point.x, point.y, point.z - eps) - (sphere_position + vec3(0.0, oscY, 0.0)), sphere_radius, torus_radi),	
+					smoothness,
+					dummy
 				)
 			));
-			vec3 color = mix(color1, color2, (dist1 + dist2) / 2.0);
+			vec3 color = mix(color1, color2, blend_factor);
 			ALBEDO = shade(point, ray_origin, normal, normalize(light_position - point)) * color;
 		}
 		depth += dist;
