@@ -49,14 +49,14 @@ float torusSDF(vec3 p, float s, vec2 t){
 	return length(q) - t.y;
 }
 
-vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction){
+vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction, vec3 color){
 	vec3 ambient = ambient_strength * light_color;
 	vec3 diffuse = max(dot(normal, light_direction), 0.0) * light_color;
 	vec3 view = normalize(camera_position - point);
 	vec3 half_way = normalize(view + light_direction);
 	float spec = pow(max(dot(normal, half_way), 0.0), shininess);
 	vec3 specular = spec * light_color;
-	return ambient + diffuse + specular;
+	return color * (ambient + diffuse) + specular;
 }
 
 #define rayMarchUnion2(sdf1, sdf2, sdf3, shader, eps, light_position, position1, position2, oscY, ray_origin, ray_direction, s_radius, t_radii, prim_color1, prim_color2, depth, point, dist, outputColor)\
@@ -111,7 +111,7 @@ vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction){
 				)\
 			));\
 			vec3 color = mix(prim_color1, prim_color2, blend_factor);\
-			outputColor = shader(point, ray_origin, normal, normalize(light_position - point)) * color;\
+			outputColor = shader(point, ray_origin, normal, normalize(light_position - point), color);\
 			break;\
 		}\
 		if (dist >= 100.0){\
@@ -193,7 +193,7 @@ vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction){
 				)\
 			));\
 			vec3 color = blend_factor1 * prim_color1 + blend_factor2 * prim_color2 + blend_factor3 * prim_color3;\
-			outputColor = shader(point, ray_origin, normal, normalize(light_position - point)) * color;\
+			outputColor = shader(point, ray_origin, normal, normalize(light_position - point), color);\
 			break;\
 		}\
 		if (dist >= 100.0){\
@@ -217,7 +217,7 @@ vec3 shade(vec3 point, vec3 camera_position, vec3 normal, vec3 light_direction){
 				sdf(vec3(point.x, point.y + eps, point.z) - position, s_radius, t_radii) - sdf(vec3(point.x, point.y - eps, point.z) - position, s_radius, t_radii),\
 				sdf(vec3(point.x, point.y, point.z + eps) - position, s_radius, t_radii) - sdf(vec3(point.x, point.y, point.z - eps) - position, s_radius, t_radii)\
 			));\
-			outputColor = shader(point, ray_origin, normal, normalize(light_position - point)) * prim_color;\
+			outputColor = shader(point, ray_origin, normal, normalize(light_position - point), prim_color);\
 			break;\
 		}\
 		if (dist >= 100.0){\
